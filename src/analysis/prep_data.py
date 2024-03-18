@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import spacy
 import textdescriptives as td
 from tqdm import tqdm
 
@@ -8,7 +9,10 @@ from utils import *
 
 
 def main():
-    # load data
+    # checking spacy is downloaded to allow for textdescriptives to work
+    spacy.load("en_core_web_lg")
+
+    # # load data
     print("[INFO]: loading data")
     fics = read_jsonl("temp2.ndjson")
 
@@ -16,8 +20,8 @@ def main():
     print("[INFO]: turning into dataframe")
     df = pd.DataFrame(fics)
 
-    # subset for testing
-    # df = pd.read_csv("subset.csv")
+    # # subset for testing
+    # # df = pd.read_csv("subset.csv")
 
     # remove duplicates
     df = df.drop_duplicates(subset="work_id")
@@ -27,15 +31,22 @@ def main():
     word_count = []
     snippets = []
 
-    for text in tqdm(list(df["text"]), total=len(df["work_id"])):
-        temp = text.replace("\n", " ").split(" ")
-        word_count.append(len(temp))
-        snippets.append(" ".join(temp[100:600]))
+    for text in tqdm(list(df["text"]), total=df.shape[0]):
+        clean_text = text.replace("\n", " ")
+        tokenized_text = clean_text.split(" ")
+        tokenized_text = [token for token in tokenized_text if token != ""]
+        fic_length = len(tokenized_text)
+        word_count.append(fic_length)
+
+        snip_start, snip_end = get_snip_range(fic_length)
+        # snip_start = 100
+        # snip_end = 600
+        snippets.append(" ".join(tokenized_text[snip_start:snip_end]))
 
     df["word_count"] = word_count
     df["snippet"] = snippets
 
-    # keep only fics with enough words
+    # remove short fics
     df = df.loc[df["word_count"] > 600]
 
     # make a column with the fandom label
@@ -45,31 +56,19 @@ def main():
     no_fit = df.loc[df["fandom_label"] == "no fit"]
     no_fit.to_csv("no_fit.csv", index=False)
 
-    # get a sample of the data
-    print("[INFO]: getting subset")
-    pj_subset = df.loc[df["fandom_label"] == "PJ"].sample(n=1000)
-    hp_subset = df.loc[df["fandom_label"] == "HP"].sample(n=1000)
-    lotr_subset = df.loc[df["fandom_label"] == "LOTR"].sample(n=1000)
-
-    sample_df = pd.concat([pj_subset, hp_subset, lotr_subset])
-
-    sample_df.to_csv("snippets_full.csv", index=False)
+    df.to_csv("all_snippets_full.csv", index=False)
 
     # get text descriptives
     print("[INFO]: getting quality metrics")
-    metrics = td.extract_metrics(
-        text=list(sample_df["snippet"]),
-        spacy_model="en_core_web_lg",
-        metrics=["quality"],
-    )
+    metrics = td.extract_metrics(text=list(df['snippet']), spacy_model='en_core_web_lg', metrics=['quality'])
 
-    sample_df["passed_qual_check"] = list(metrics["passed_quality_check"])
+    df['passed_qual_check'] = list(metrics['passed_quality_check'])
 
     # save full df
-    sample_df.to_csv("snippets_full.csv", index=False)
+    df.to_csv("all_snippets_full.csv", index=False)
 
     # create df with the snippet and meta-data, without the whole text
-    meta = sample_df[
+    meta = df[
         [
             "url",
             "work_id",
@@ -89,23 +88,20 @@ def main():
             "words",
             "word_count",
             "fandom_label",
-            "snippet",
-            "passed_qual_check",
+            "snippet",  
+            'passed_qual_check'
         ]
     ]
 
-    meta.to_csv("snippets_meta.csv", index=False)
-
-    # DECIDE WHETHER FAILS ON THE QUAL CHECK SHOULD BE EXCLUDED
-
+    meta.to_csv("all_snippets_meta.csv", index=False)
+    
     print("[INFO]: saving snippets in individual .txt files in corresponding folders")
-    for i, snippet in enumerate(list(sample_df["snippet"])):
-        # get the corresponding fandom label for the current snippet
-        out_dir = f"texts/{list(sample_df['fandom_label'])[i]}/"
+    for i, snippet in tqdm(enumerate(list(df["snippet"])), total = df.shape[0]):
+        # make the out dir the fandom label for the current snippet 
+        out_dir = f"all_texts/{list(df['fandom_label'])[i]}/"
         Path(out_dir).mkdir(exist_ok=True)
-
-        # e.g. texts/PJ/0_fic.txt
-        with open(f"{out_dir}{i}_fic.txt", "w") as f:
+        # make the filename the work_id 
+        with open(f"{out_dir}{list(df['work_id'])[i]}.txt", "w") as f:
             f.write(snippet)
 
 

@@ -6,6 +6,7 @@ def main():
     files = [file for file in os.listdir("raw_sources") if file.endswith(".txt")]
 
     for file in files:
+        # keep track of progress 
         print(file)
 
         # open file
