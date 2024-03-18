@@ -8,7 +8,7 @@ import requests
 from unidecode import unidecode
 
 
-def read_lines(filename):
+def read_lines(filename: str):
     """
     read the links in a file
     """
@@ -18,7 +18,7 @@ def read_lines(filename):
     return lines
 
 
-def get_soup(url):
+def get_soup(url: str):
     """
     get the beautiful soup from a url
     from the Ao3 scraper: https://github.com/radiolarian/AO3Scraper/tree/master
@@ -55,7 +55,7 @@ def get_links(soup):
 
 def get_stat(soup, stat):
     """
-    returns the number for the given stat. if the stat does not exist, None is returned
+    returns the number for the given stat. if the stat does not exist, 0 is returned
     """
     try:
         result = int(soup.select_one(f"dd.{stat}").get_text().replace(",", ""))
@@ -86,7 +86,10 @@ def get_chaptertext(soup):
     return text
 
 
-def save_ndjson(filename: str, works):
+def save_ndjson(filename: str, works: list[dict]):
+    """
+    save a newline delimited json file  
+    """
     with open(filename, "w", encoding="UTF-8") as f:
         for work in works:
             f.write(json.dumps(work))

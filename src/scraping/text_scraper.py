@@ -11,7 +11,7 @@ def main():
     links = read_lines("new_links.txt")
 
     works = []
-    for link in tqdm(links[343773:]):
+    for link in tqdm(links):
         # checking if it is a works link
         if "/users/" in link:
             continue
