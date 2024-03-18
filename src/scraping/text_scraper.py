@@ -1,14 +1,10 @@
-import argparse
 import json
 import time
 
-from bs4 import BeautifulSoup
-import lxml
-import requests
 from tqdm import tqdm
 from unidecode import unidecode
 
-from fanfic_thesis.src.utils import *
+from utils import *
 
 
 def main():

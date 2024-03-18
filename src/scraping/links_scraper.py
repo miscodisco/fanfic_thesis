@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 import lxml
 import requests
 
-from fanfic_thesis.src.utils import read_lines, get_soup, get_links
+from utils import read_lines, get_soup, get_links
 
 
 def main():

@@ -1,0 +1,201 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## load packages
+```{r}
+pacman::p_load(tidyverse, lmerTest, car, interactions, cld2, rstatix, ggpubr, lme4)
+
+```
+
+## load data
+```{r}
+## dimension scores
+pj <- read_csv("~/Desktop/Dimensions_PJ.csv")
+hp <- read_csv("~/Desktop/Dimensions_HP.csv")
+lotr <- read_csv("~/Desktop/Dimensions_LOTR.csv")
+
+pj_s <- read_csv("~/Desktop/Dimensions_pj_source.csv")
+hp_s <- read_csv("~/Desktop/Dimensions_hp_source.csv")
+lotr_s <- read_csv("~/Desktop/Dimensions_lotr_source.csv")
+
+## prep for merge 
+hp$fandom_type = "HP fanfic"
+pj$fandom_type = "PJ fanfic"
+lotr$fandom_type = "LOTR fanfic"
+
+hp_s <- hp_s %>% 
+  mutate(fandom_type = "HP source", 
+         author = "Rowling source")
+pj_s <- pj_s %>% 
+  mutate(fandom_type = "PJ source", 
+         author = "Riordan source")
+lotr_s <- lotr_s %>% 
+  mutate(fandom_type = "LOTR source", 
+         author = "Tolkien source")
+
+
+raw_fanfics = rbind(hp, pj, lotr) %>% 
+  rename(work_id = Filename)
+
+raw_sources = rbind(hp_s, pj_s, lotr_s)%>% 
+  rename(work_id = Filename)
+
+## meta data
+meta <- read_csv('~/Desktop/all_snippets_meta(1).csv')
+
+
+# clean the data 
+meta <- meta %>% 
+  filter(passed_qual_check == TRUE) %>% 
+  mutate(lang_detect = cld2::detect_language(snippet)) %>% 
+  filter(lang_detect == 'en')
+
+# retrieve fanfic authors from the meta data 
+fanfics <- meta %>% 
+  select(work_id, author) %>%
+  merge(., raw_fanfics, on = 'work_id') %>% 
+  select(-author, author)
+
+# bind together and make extra columns
+df <- rbind(fanfics, raw_sources)
+
+df[c('fandom', 'type')] <- str_split_fixed(df$fandom_type, ' ', 2)
+
+```
+
+## clean data and prep for analysis
+```{r}
+# removing outliers
+subset <- df %>% 
+  select(starts_with('Dimension'))
+
+percentiles <- sapply(subset, function(subset) (quantile(subset, 
+                                                probs = c(0, 0.005, 0.01, 0.025, 
+                                                          0.975, 0.99, 0.995, 1))))
+
+exclude <- df %>% 
+  filter(Dimension1 < -15.93 | Dimension1 > 28.82 |
+         Dimension2 < -3.31 | Dimension2 > 18.58 |
+         Dimension3 < -8.1 | Dimension3 > 6.97 |
+         Dimension4 < -6.53 | Dimension4 > 12.04 |
+         Dimension5 < -3.92 | Dimension5 > 7.22 |
+         Dimension6 < -3.5 | Dimension6 > 3.69)
+
+
+df <- df %>% 
+  filter(!work_id %in% exclude$work_id)
+
+```
+
+# RQ1: Is there a difference in mean score for each dimension between fanfic and source? 
+```{r}
+# dim 1 
+null_dim1 <- lmerTest::lmer(Dimension1 ~ 1 + (1|author), data = df, REML = F)
+max_dim1 <- lmerTest::lmer(Dimension1 ~ type*fandom + (1|author), data = df, REML = F)
+
+m1_dim1 <- lmerTest::lmer(Dimension1 ~ type + fandom + (1|author), data = df, REML = F)
+m2_dim1 <- lmerTest::lmer(Dimension1 ~ fandom + (1|author), data = df, REML = F)
+m3_dim1 <- lmerTest::lmer(Dimension1 ~ type + (1|author), data = df, REML = F)
+
+anova(null_dim1, max_dim1, m1_dim1, m2_dim1, m3_dim1)
+
+summary(m2_dim1)
+```
+
+```{r}
+# dim 2
+null_dim2 <- lmerTest::lmer(Dimension2 ~ 1 + (1|author), data = df, REML = F)
+max_dim2 <- lmerTest::lmer(Dimension2 ~ type*fandom + (1|author), data = df, REML = F)
+
+m1_dim2 <- lmerTest::lmer(Dimension2 ~ type + fandom + (1|author), data = df, REML = F)
+m2_dim2 <- lmerTest::lmer(Dimension2 ~ fandom + (1|author), data = df, REML = F)
+m3_dim2 <- lmerTest::lmer(Dimension2 ~ type + (1|author), data = df, REML = F)
+
+anova(null_dim2, max_dim2, m1_dim2, m2_dim2, m3_dim2)
+
+summary(m2_dim2)
+```
+
+```{r}
+# dim 3
+null_dim3 <- lmerTest::lmer(Dimension3 ~ 1 + (1|author), data = df, REML = F)
+max_dim3 <- lmerTest::lmer(Dimension3 ~ type*fandom + (1|author), data = df, REML = F)
+
+m1_dim3 <- lmerTest::lmer(Dimension3 ~ type + fandom + (1|author), data = df, REML = F)
+m2_dim3 <- lmerTest::lmer(Dimension3 ~ fandom + (1|author), data = df, REML = F)
+m3_dim3 <- lmerTest::lmer(Dimension3 ~ type + (1|author), data = df, REML = F)
+
+anova(null_dim3, max_dim3, m1_dim3, m2_dim3, m3_dim3)
+
+summary(m2_dim3)
+```
+
+```{r}
+# dim 4 
+null_dim4 <- lmerTest::lmer(Dimension4 ~ 1 + (1|author), data = df, REML = F)
+max_dim4 <- lmerTest::lmer(Dimension4 ~ type*fandom + (1|author), data = df, REML = F)
+
+m1_dim4 <- lmerTest::lmer(Dimension4 ~ type + fandom + (1|author), data = df, REML = F)
+m2_dim4 <- lmerTest::lmer(Dimension4 ~ fandom + (1|author), data = df, REML = F)
+m3_dim4 <- lmerTest::lmer(Dimension4 ~ type + (1|author), data = df, REML = F)
+
+anova(null_dim4, max_dim4, m1_dim4, m2_dim4, m3_dim4)
+
+summary(m1_dim4)
+```
+
+```{r}
+# dim 5
+null_dim5 <- lmerTest::lmer(Dimension5 ~ 1 + (1|author), data = df, REML = F)
+max_dim5 <- lmerTest::lmer(Dimension5 ~ type*fandom + (1|author), data = df, REML = F)
+
+m1_dim5 <- lmerTest::lmer(Dimension5 ~ type + fandom + (1|author), data = df, REML = F)
+m2_dim5 <- lmerTest::lmer(Dimension5 ~ fandom + (1|author), data = df, REML = F)
+m3_dim5 <- lmerTest::lmer(Dimension5 ~ type + (1|author), data = df, REML = F)
+
+anova(null_dim5, max_dim5, m1_dim5, m2_dim5, m3_dim5)
+
+summary(m2_dim5)
+```
+
+```{r}
+# dim 6
+null_dim6 <- lmerTest::lmer(Dimension6 ~ 1 + (1|author), data = df, REML = F)
+max_dim6 <- lmerTest::lmer(Dimension6 ~ type*fandom + (1|author), data = df, REML = F)
+
+m1_dim6 <- lmerTest::lmer(Dimension6 ~ type + fandom + (1|author), data = df, REML = F)
+m2_dim6 <- lmerTest::lmer(Dimension6 ~ fandom + (1|author), data = df, REML = F)
+m3_dim6 <- lmerTest::lmer(Dimension6 ~ type + (1|author), data = df, REML = F)
+
+anova(null_dim6, max_dim6, m1_dim6, m2_dim6, m3_dim6)
+
+summary(m2_dim6)
+```
+
+# Plotting
+```{r}
+col_palette = c("#6C464F","#679436", "#EF8354")
+
+# make data long
+long <- df %>% 
+  pivot_longer(cols = Dimension1:Dimension6,
+               names_to = "Dimension",
+               values_to = "Score")
+
+# add general fiction scores
+gf_scores <- data.frame(Score = c(-0.8, 5.9, -3.1, 0.9, -2.5, -1.6),
+                        Dimension = c("Dimension1", "Dimension2", "Dimension3", "Dimension4", "Dimension5", "Dimension6"))
+long %>% 
+  mutate(type = str_to_title(type)) %>% 
+  ggplot(., aes(Score, col = fandom))+
+  geom_density(alpha = 0.3)+
+  geom_vline(data = gf_scores, aes(xintercept = Score), linetype = 2, color = 'darkgrey')+
+  facet_wrap(Dimension~type, scales = 'free')+
+  theme_classic()+
+  scale_color_manual(values = col_palette, name = 'Fandom')
+    
+```
+

@@ -1,0 +1,239 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## load packages
+```{r}
+pacman::p_load(tidyverse, lmerTest, car, interactions, cld2, rstatix, ggpubr, lme4)
+
+```
+
+## load data 
+```{r}
+# dimension scores 
+pj <- read_csv("~/Desktop/Dimensions_PJ.csv")
+hp <- read_csv("~/Desktop/Dimensions_HP.csv")
+lotr <- read_csv("~/Desktop/Dimensions_LOTR.csv")
+
+df <- rbind(pj, hp, lotr) %>% 
+  rename(work_id = Filename)
+
+# meta data
+meta <- read_csv('~/Desktop/all_snippets_meta(1).csv')
+
+# clean 
+meta <- meta %>% 
+  mutate(lang_detect = cld2::detect_language(snippet),
+         work_id = as.character(work_id)) %>% 
+  filter(lang_detect == 'en',
+         passed_qual_check == TRUE)
+
+# combine and make kudos/hits ratio 
+full <- df %>% 
+  inner_join(., meta, by = c('work_id')) %>% 
+  mutate(kudos_hits_ratio = (kudos/hits) * 100) %>% 
+  filter(kudos_hits_ratio < 101)
+```
+
+## remove outliers
+```{r}
+subset <- full %>% 
+  select(starts_with('Dimension'), kudos_hits_ratio, hits, word_count)
+
+
+percentiles <- sapply(subset, function(subset) (quantile(subset, 
+                                                probs = c(0, 0.005, 0.01, 0.025, 
+                                                          0.975, 0.99, 0.995, 1))))
+exclude <- full %>% 
+  filter(Dimension1 < -15.93 | Dimension1 > 28.82 |
+         Dimension2 < -3.31 | Dimension2 > 18.58 |
+         Dimension3 < -8.1 | Dimension3 > 6.97 |
+         Dimension4 < -6.52 | Dimension4 > 12.04 |
+         Dimension5 < -3.92 | Dimension5 > 7.23 |
+         Dimension6 < -3.5 | Dimension6 > 3.69 |
+         kudos_hits_ratio < 0.01 | kudos_hits_ratio > 19.378 |
+         hits < 15 | hits > 137224 |
+         word_count < 615 | word_count > 245014)
+
+# remove outliers and fics published before 2000 (change?) + scale word count 
+full <- full %>% 
+  filter(!work_id %in% exclude$work_id,
+         published > "2000-01-01") %>% 
+  mutate(word_count_scaled = scale(word_count))
+
+
+```
+
+# RQ2: How do engagement metrics change Dimension scores (change?)? 
+
+```{r}
+# dim1
+
+null_dim1 <- lmerTest::lmer(Dimension1 ~ 1 + (1|author), data = full, REML = F)
+max_dim1 <- lmerTest::lmer(Dimension1 ~ fandom_label*kudos_hits_ratio + published + word_count_scaled + 
+                             (1|author), data = full, REML = F)
+
+m1_dim1 <- lmerTest::lmer(Dimension1 ~ fandom_label + kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m2_dim1 <- lmerTest::lmer(Dimension1 ~ kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m3_dim1 <- lmerTest::lmer(Dimension1 ~ fandom_label + published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+m4_dim1 <- lmerTest::lmer(Dimension1 ~ published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+
+anova(null_dim1, max_dim1, m1_dim1, m2_dim1, m3_dim1, m4_dim1)
+
+summary(max_dim1)
+
+vif(max_dim1)
+plot(max_dim1)
+```
+
+```{r}
+null_dim2 <- lmerTest::lmer(Dimension2 ~ 1 + (1|author), data = full, REML = F)
+max_dim2 <- lmerTest::lmer(Dimension2 ~ fandom_label*kudos_hits_ratio + published + word_count_scaled + 
+                             (1|author), data = full, REML = F)
+
+m1_dim2 <- lmerTest::lmer(Dimension2 ~ fandom_label + kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m2_dim2 <- lmerTest::lmer(Dimension2 ~ kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m3_dim2 <- lmerTest::lmer(Dimension2 ~ fandom_label + published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+m4_dim2 <- lmerTest::lmer(Dimension2 ~ published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+
+anova(null_dim2, max_dim2, m1_dim2, m2_dim2, m3_dim2, m4_dim2)
+
+summary(max_dim2)
+
+vif(max_dim2)
+plot(max_dim2)
+```
+
+```{r}
+null_dim3 <- lmerTest::lmer(Dimension3 ~ 1 + (1|author), data = full, REML = F)
+max_dim3 <- lmerTest::lmer(Dimension3 ~ fandom_label*kudos_hits_ratio + published + word_count_scaled + 
+                             (1|author), data = full, REML = F)
+
+m1_dim3 <- lmerTest::lmer(Dimension3 ~ fandom_label + kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m2_dim3 <- lmerTest::lmer(Dimension3 ~ kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m3_dim3 <- lmerTest::lmer(Dimension3 ~ fandom_label + published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+m4_dim3 <- lmerTest::lmer(Dimension3 ~ published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+
+anova(null_dim3, max_dim3, m1_dim3, m2_dim3, m3_dim3, m4_dim3)
+
+summary(m3_dim3)
+
+
+```
+
+
+```{r}
+null_dim4 <- lmerTest::lmer(Dimension4 ~ 1 + (1|author), data = full, REML = F)
+max_dim4 <- lmerTest::lmer(Dimension4 ~ fandom_label*kudos_hits_ratio + published + word_count_scaled + 
+                             (1|author), data = full, REML = F)
+
+m1_dim4 <- lmerTest::lmer(Dimension4 ~ fandom_label + kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m2_dim4 <- lmerTest::lmer(Dimension4 ~ kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m3_dim4 <- lmerTest::lmer(Dimension4 ~ fandom_label + published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+m4_dim4 <- lmerTest::lmer(Dimension4 ~ published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+
+anova(null_dim4, max_dim4, m1_dim4, m2_dim4, m3_dim4, m4_dim4)
+
+summary(max_dim4)
+
+```
+
+```{r}
+null_dim5 <- lmerTest::lmer(Dimension5 ~ 1 + (1|author), data = full, REML = F)
+max_dim5 <- lmerTest::lmer(Dimension5 ~ fandom_label*kudos_hits_ratio + published + word_count_scaled + 
+                             (1|author), data = full, REML = F)
+
+m1_dim5 <- lmerTest::lmer(Dimension5 ~ fandom_label + kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m2_dim5 <- lmerTest::lmer(Dimension5 ~ kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m3_dim5 <- lmerTest::lmer(Dimension5 ~ fandom_label + published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+m4_dim5 <- lmerTest::lmer(Dimension5 ~ published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+
+anova(null_dim5, max_dim5, m1_dim5, m2_dim5, m3_dim5, m4_dim5)
+
+summary(m1_dim5)
+```
+
+```{r}
+null_dim6 <- lmerTest::lmer(Dimension6 ~ 1 + (1|author), data = full, REML = F)
+max_dim6 <- lmerTest::lmer(Dimension6 ~ fandom_label*kudos_hits_ratio + published + word_count_scaled + 
+                             (1|author), data = full, REML = F)
+
+m1_dim6 <- lmerTest::lmer(Dimension6 ~ fandom_label + kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m2_dim6 <- lmerTest::lmer(Dimension6 ~ kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)
+m3_dim6 <- lmerTest::lmer(Dimension6 ~ fandom_label + published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+m4_dim6 <- lmerTest::lmer(Dimension6 ~ published + word_count_scaled + 
+                            (1|author), data = full, REML = F)
+
+anova(null_dim6, max_dim6, m0_dim6, m1_dim6, m2_dim6, m3_dim6, m4_dim6)
+
+summary(m1_dim6)
+
+```
+
+
+# Plotting
+```{r}
+col_palette = c("#6C464F","#679436", "#EF8354")
+
+# make long 
+long <- full %>% 
+  pivot_longer(cols = Dimension1:Dimension6,
+               names_to = "Dimension",
+               values_to = "Score")
+
+# change labels of dimensions in plots
+dimension_labeller <- c(
+  Dimension1="D1: Informational/Involved",
+  Dimension2="D2: Narrative Concern",
+  Dimension3="D3: Context-(In)Dependent",
+  Dimension4="D4: Overt Persuation",
+  Dimension5="D5: Non-abstract/Abstract",
+  Dimension6="D6: On-line Elaboration"
+)
+
+# plot the mean dimension score for each fandom 
+means <- long %>% 
+  group_by(fandom_label, Dimension) %>% 
+  summarise(mean_scor=mean(Score))
+# add to df so we can plot it
+long_plot <- merge(long, means)
+
+
+# plot
+long_plot %>% 
+  ggplot(., aes(kudos_hits_ratio, Score, col = fandom_label))+
+  geom_smooth(method = 'lm',alpha = .3)+
+  # geom_hline(aes(yintercept=mean_scor, col = fandom_label, linetype = fandom_label))+
+  facet_wrap(~Dimension, scales = 'free', labeller=labeller(Dimension = dimension_labeller))+
+  theme_classic()+
+  scale_color_manual(values = col_palette, name = "Fandom")+
+  labs(x = "Kudos/Hits Ratio")
+
+
+```
+

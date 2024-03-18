@@ -67,7 +67,7 @@ def get_stat(soup, stat):
 
 def get_tags(soup, tag):
     """
-    returns a list of tags for a given tag type 
+    returns a list of tags for a given tag type
     """
     css_pattern = f"dd.{tag}.tags > ul.commas > li"
 
@@ -78,7 +78,7 @@ def get_tags(soup, tag):
 
 def get_chaptertext(soup):
     """
-    from the Ao3 scraper: https://github.com/radiolarian/AO3Scraper/tree/master 
+    from the Ao3 scraper: https://github.com/radiolarian/AO3Scraper/tree/master
     """
     chapters = soup.select("div#chapters p")
 
@@ -86,7 +86,7 @@ def get_chaptertext(soup):
     return text
 
 
-def save_ndjson(filename:str, works):
+def save_ndjson(filename: str, works):
     with open(filename, "w", encoding="UTF-8") as f:
         for work in works:
             f.write(json.dumps(work))
