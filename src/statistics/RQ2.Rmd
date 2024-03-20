@@ -17,7 +17,7 @@ pj <- read_csv("~/Desktop/Dimensions_PJ.csv")
 hp <- read_csv("~/Desktop/Dimensions_HP.csv")
 lotr <- read_csv("~/Desktop/Dimensions_LOTR.csv")
 
-df <- rbind(pj, hp, lotr) %>% 
+raw_fanfics <- rbind(pj, hp, lotr) %>% 
   rename(work_id = Filename)
 
 # meta data
@@ -31,10 +31,11 @@ meta <- meta %>%
          passed_qual_check == TRUE)
 
 # combine and make kudos/hits ratio 
-full <- df %>% 
+full <- raw_fanfics %>% 
   inner_join(., meta, by = c('work_id')) %>% 
   mutate(kudos_hits_ratio = (kudos/hits) * 100) %>% 
   filter(kudos_hits_ratio < 101)
+
 ```
 
 ## remove outliers
@@ -46,24 +47,40 @@ subset <- full %>%
 percentiles <- sapply(subset, function(subset) (quantile(subset, 
                                                 probs = c(0, 0.005, 0.01, 0.025, 
                                                           0.975, 0.99, 0.995, 1))))
-exclude <- full %>% 
+exclude2 <- full %>% 
   filter(Dimension1 < -15.93 | Dimension1 > 28.82 |
          Dimension2 < -3.31 | Dimension2 > 18.58 |
          Dimension3 < -8.1 | Dimension3 > 6.97 |
          Dimension4 < -6.52 | Dimension4 > 12.04 |
          Dimension5 < -3.92 | Dimension5 > 7.23 |
-         Dimension6 < -3.5 | Dimension6 > 3.69 |
-         kudos_hits_ratio < 0.01 | kudos_hits_ratio > 19.378 |
+          Dimension6 < -3.5 | Dimension6 > 3.69 | 
+          kudos_hits_ratio > 19.378 |
          hits < 15 | hits > 137224 |
          word_count < 615 | word_count > 245014)
 
 # remove outliers and fics published before 2000 (change?) + scale word count 
 full <- full %>% 
-  filter(!work_id %in% exclude$work_id,
-         published > "2000-01-01") %>% 
+  filter(kudos_hits_ratio < 19.378,
+         hits > 15, hits < 137224,
+         word_count > 615, word_count < 245014,
+         published > "2000-01-01",
+         Dimension1 > -15.93, Dimension1 < 28.82,
+         Dimension2 > -3.31, Dimension2 < 18.58,
+         Dimension3 > -8.1, Dimension3 < 6.97,
+         Dimension4 > -6.52, Dimension4 < 12.04,
+         Dimension5 > -3.92, Dimension5 < 7.23,
+         Dimension6 > -3.5, Dimension6 < 3.69) %>% 
   mutate(word_count_scaled = scale(word_count))
 
 
+```
+
+## descriptive stats
+```{r}
+full %>% 
+  group_by(fandom_label) %>% 
+  summarise(n = n())
+ 
 ```
 
 # RQ2: How do engagement metrics change Dimension scores (change?)? 
@@ -72,11 +89,14 @@ full <- full %>%
 # dim1
 
 null_dim1 <- lmerTest::lmer(Dimension1 ~ 1 + (1|author), data = full, REML = F)
+
 max_dim1 <- lmerTest::lmer(Dimension1 ~ fandom_label*kudos_hits_ratio + published + word_count_scaled + 
                              (1|author), data = full, REML = F)
 
+
 m1_dim1 <- lmerTest::lmer(Dimension1 ~ fandom_label + kudos_hits_ratio + published + word_count_scaled +
                             (1|author), data = full, REML = F)
+
 m2_dim1 <- lmerTest::lmer(Dimension1 ~ kudos_hits_ratio + published + word_count_scaled +
                             (1|author), data = full, REML = F)
 m3_dim1 <- lmerTest::lmer(Dimension1 ~ fandom_label + published + word_count_scaled + 
@@ -88,8 +108,12 @@ anova(null_dim1, max_dim1, m1_dim1, m2_dim1, m3_dim1, m4_dim1)
 
 summary(max_dim1)
 
-vif(max_dim1)
-plot(max_dim1)
+```
+
+
+```{r}
+# vif(max_dim1)
+# plot(max_dim1)
 ```
 
 ```{r}
@@ -110,8 +134,8 @@ anova(null_dim2, max_dim2, m1_dim2, m2_dim2, m3_dim2, m4_dim2)
 
 summary(max_dim2)
 
-vif(max_dim2)
-plot(max_dim2)
+#vif(max_dim2)
+#plot(max_dim2)
 ```
 
 ```{r}
@@ -130,7 +154,7 @@ m4_dim3 <- lmerTest::lmer(Dimension3 ~ published + word_count_scaled +
 
 anova(null_dim3, max_dim3, m1_dim3, m2_dim3, m3_dim3, m4_dim3)
 
-summary(m3_dim3)
+summary(m1_dim3)
 
 
 ```
@@ -189,7 +213,7 @@ m3_dim6 <- lmerTest::lmer(Dimension6 ~ fandom_label + published + word_count_sca
 m4_dim6 <- lmerTest::lmer(Dimension6 ~ published + word_count_scaled + 
                             (1|author), data = full, REML = F)
 
-anova(null_dim6, max_dim6, m0_dim6, m1_dim6, m2_dim6, m3_dim6, m4_dim6)
+anova(null_dim6, max_dim6, m1_dim6, m2_dim6, m3_dim6, m4_dim6)
 
 summary(m1_dim6)
 
@@ -232,8 +256,9 @@ long_plot %>%
   facet_wrap(~Dimension, scales = 'free', labeller=labeller(Dimension = dimension_labeller))+
   theme_classic()+
   scale_color_manual(values = col_palette, name = "Fandom")+
-  labs(x = "Kudos/Hits Ratio")
+  labs(x = "Kudos/Hits Ratio")+
+  theme(plot.background = element_rect(color = "black", linewidth = 1))
 
-
+ggsave("rq2_plot.png", width = 10, height = 7)
 ```
 

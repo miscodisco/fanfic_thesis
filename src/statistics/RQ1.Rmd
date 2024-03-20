@@ -6,7 +6,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## load packages
 ```{r}
-pacman::p_load(tidyverse, lmerTest, car, interactions, cld2, rstatix, ggpubr, lme4)
+pacman::p_load(tidyverse, lmerTest, car, interactions, cld2, rstatix, ggpubr, lme4, Hmisc)
 
 ```
 
@@ -46,49 +46,63 @@ raw_sources = rbind(hp_s, pj_s, lotr_s)%>%
 ## meta data
 meta <- read_csv('~/Desktop/all_snippets_meta(1).csv')
 
-
-# clean the data 
+# clean 
 meta <- meta %>% 
-  filter(passed_qual_check == TRUE) %>% 
-  mutate(lang_detect = cld2::detect_language(snippet)) %>% 
-  filter(lang_detect == 'en')
+  mutate(lang_detect = cld2::detect_language(snippet),
+         work_id = as.character(work_id)) %>% 
+  filter(lang_detect == 'en',
+         passed_qual_check == TRUE)
 
-# retrieve fanfic authors from the meta data 
-fanfics <- meta %>% 
-  select(work_id, author) %>%
-  merge(., raw_fanfics, on = 'work_id') %>% 
-  select(-author, author)
+# combine and make kudos/hits ratio 
+fanfics <- raw_fanfics %>% 
+  inner_join(., meta, by = c('work_id')) %>% 
+  mutate(kudos_hits_ratio = (kudos/hits) * 100) %>% 
+  filter(kudos_hits_ratio < 101)
 
-# bind together and make extra columns
-df <- rbind(fanfics, raw_sources)
-
-df[c('fandom', 'type')] <- str_split_fixed(df$fandom_type, ' ', 2)
 
 ```
+
 
 ## clean data and prep for analysis
 ```{r}
 # removing outliers
-subset <- df %>% 
-  select(starts_with('Dimension'))
+subset <- fanfics %>% 
+  select(starts_with('Dimension'), kudos_hits_ratio, hits, word_count)
 
 percentiles <- sapply(subset, function(subset) (quantile(subset, 
                                                 probs = c(0, 0.005, 0.01, 0.025, 
                                                           0.975, 0.99, 0.995, 1))))
 
-exclude <- df %>% 
-  filter(Dimension1 < -15.93 | Dimension1 > 28.82 |
-         Dimension2 < -3.31 | Dimension2 > 18.58 |
-         Dimension3 < -8.1 | Dimension3 > 6.97 |
-         Dimension4 < -6.53 | Dimension4 > 12.04 |
-         Dimension5 < -3.92 | Dimension5 > 7.22 |
-         Dimension6 < -3.5 | Dimension6 > 3.69)
-
+fanfics_no_out <- fanfics %>% 
+  filter(kudos_hits_ratio < 19.378,
+         hits > 15, hits < 137224,
+         word_count > 615, word_count < 245014,
+         published > "2000-01-01") %>% 
+  select(work_id:fandom_type, author)
+  
+# bind together and make extra columns
+df <- rbind(fanfics_no_out, raw_sources) 
 
 df <- df %>% 
-  filter(!work_id %in% exclude$work_id)
+  filter(Dimension1 > -15.93, Dimension1 < 28.82,
+         Dimension2 > -3.31, Dimension2 < 18.58,
+         Dimension3 > -8.1, Dimension3 < 6.97,
+         Dimension4 > -6.52, Dimension4 < 12.04,
+         Dimension5 > -3.92, Dimension5 < 7.23,
+         Dimension6 > -3.5, Dimension6 < 3.69 )
+
+df[c('fandom', 'type')] <- str_split_fixed(df$fandom_type, ' ', 2)
 
 ```
+
+## descriptive stats
+```{r}
+df %>% 
+  group_by(type, fandom) %>% 
+  summarise(n = n())
+ 
+```
+
 
 # RQ1: Is there a difference in mean score for each dimension between fanfic and source? 
 ```{r}
@@ -195,7 +209,15 @@ long %>%
   geom_vline(data = gf_scores, aes(xintercept = Score), linetype = 2, color = 'darkgrey')+
   facet_wrap(Dimension~type, scales = 'free')+
   theme_classic()+
-  scale_color_manual(values = col_palette, name = 'Fandom')
+  scale_color_manual(values = col_palette, name = 'Fandom')+
+  theme(plot.background = element_rect(color = "black", linewidth = 1))+
+  labs(y = 'Density')
+
+
+
+ggsave("rq1_plot.png", width = 8, height = 6)
+
     
 ```
+
 
