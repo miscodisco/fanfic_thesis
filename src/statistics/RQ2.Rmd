@@ -98,7 +98,7 @@ anova(null_dim1, max_dim1, m1_dim1, m2_dim1, m3_dim1, m4_dim1)
 
 summary(max_dim1)
 
-r.squaredGLMM()
+r.squaredGLMM(max_dim1)
 
 ```
 
@@ -126,6 +126,9 @@ anova(null_dim2, max_dim2, m1_dim2, m2_dim2, m3_dim2, m4_dim2)
 
 summary(max_dim2)
 
+r.squaredGLMM(max_dim2)
+
+
 #vif(max_dim2)
 #plot(max_dim2)
 ```
@@ -148,6 +151,7 @@ anova(null_dim3, max_dim3, m1_dim3, m2_dim3, m3_dim3, m4_dim3)
 
 summary(m1_dim3)
 
+r.squaredGLMM(m1_dim3)
 
 ```
 
@@ -170,6 +174,8 @@ anova(null_dim4, max_dim4, m1_dim4, m2_dim4, m3_dim4, m4_dim4)
 
 summary(max_dim4)
 
+r.squaredGLMM(max_dim4)
+
 ```
 
 ```{r}
@@ -189,6 +195,9 @@ m4_dim5 <- lmerTest::lmer(Dimension5 ~ published + word_count_scaled +
 anova(null_dim5, max_dim5, m1_dim5, m2_dim5, m3_dim5, m4_dim5)
 
 summary(m1_dim5)
+
+r.squaredGLMM(m1_dim5)
+
 ```
 
 ```{r}
@@ -208,6 +217,9 @@ m4_dim6 <- lmerTest::lmer(Dimension6 ~ published + word_count_scaled +
 anova(null_dim6, max_dim6, m1_dim6, m2_dim6, m3_dim6, m4_dim6)
 
 summary(m1_dim6)
+
+r.squaredGLMM(m1_dim6)
+
 
 ```
 

@@ -119,6 +119,8 @@ m3_dim1 <- lmerTest::lmer(Dimension1 ~ type + (1|author), data = df, REML = F)
 anova(null_dim1, max_dim1, m1_dim1, m2_dim1, m3_dim1)
 
 summary(m2_dim1)
+
+r.squaredGLMM(m2_dim1)
 ```
 
 ```{r}
@@ -133,6 +135,9 @@ m3_dim2 <- lmerTest::lmer(Dimension2 ~ type + (1|author), data = df, REML = F)
 anova(null_dim2, max_dim2, m1_dim2, m2_dim2, m3_dim2)
 
 summary(m2_dim2)
+
+r.squaredGLMM(m2_dim2)
+
 ```
 
 ```{r}
@@ -147,6 +152,9 @@ m3_dim3 <- lmerTest::lmer(Dimension3 ~ type + (1|author), data = df, REML = F)
 anova(null_dim3, max_dim3, m1_dim3, m2_dim3, m3_dim3)
 
 summary(m2_dim3)
+
+r.squaredGLMM(m2_dim3)
+
 ```
 
 ```{r}
@@ -160,7 +168,10 @@ m3_dim4 <- lmerTest::lmer(Dimension4 ~ type + (1|author), data = df, REML = F)
 
 anova(null_dim4, max_dim4, m1_dim4, m2_dim4, m3_dim4)
 
-summary(m1_dim4)
+summary(m2_dim4)
+
+r.squaredGLMM(m2_dim4)
+
 ```
 
 ```{r}
@@ -175,6 +186,9 @@ m3_dim5 <- lmerTest::lmer(Dimension5 ~ type + (1|author), data = df, REML = F)
 anova(null_dim5, max_dim5, m1_dim5, m2_dim5, m3_dim5)
 
 summary(m2_dim5)
+
+r.squaredGLMM(m2_dim5)
+
 ```
 
 ```{r}
@@ -189,6 +203,9 @@ m3_dim6 <- lmerTest::lmer(Dimension6 ~ type + (1|author), data = df, REML = F)
 anova(null_dim6, max_dim6, m1_dim6, m2_dim6, m3_dim6)
 
 summary(m2_dim6)
+
+r.squaredGLMM(m2_dim6)
+
 ```
 
 # Plotting
