@@ -6,7 +6,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## load packages
 ```{r}
-pacman::p_load(tidyverse, lmerTest, car, interactions, cld2, rstatix, ggpubr, lme4)
+pacman::p_load(tidyverse, lmerTest, car, interactions, cld2, rstatix, ggpubr, lme4, MuMIn)
 
 ```
 
@@ -47,18 +47,8 @@ subset <- full %>%
 percentiles <- sapply(subset, function(subset) (quantile(subset, 
                                                 probs = c(0, 0.005, 0.01, 0.025, 
                                                           0.975, 0.99, 0.995, 1))))
-exclude2 <- full %>% 
-  filter(Dimension1 < -15.93 | Dimension1 > 28.82 |
-         Dimension2 < -3.31 | Dimension2 > 18.58 |
-         Dimension3 < -8.1 | Dimension3 > 6.97 |
-         Dimension4 < -6.52 | Dimension4 > 12.04 |
-         Dimension5 < -3.92 | Dimension5 > 7.23 |
-          Dimension6 < -3.5 | Dimension6 > 3.69 | 
-          kudos_hits_ratio > 19.378 |
-         hits < 15 | hits > 137224 |
-         word_count < 615 | word_count > 245014)
 
-# remove outliers and fics published before 2000 (change?) + scale word count 
+# remove outliers and fics published before 2000 + scale word count 
 full <- full %>% 
   filter(kudos_hits_ratio < 19.378,
          hits > 15, hits < 137224,
@@ -107,6 +97,8 @@ m4_dim1 <- lmerTest::lmer(Dimension1 ~ published + word_count_scaled +
 anova(null_dim1, max_dim1, m1_dim1, m2_dim1, m3_dim1, m4_dim1)
 
 summary(max_dim1)
+
+r.squaredGLMM()
 
 ```
 
