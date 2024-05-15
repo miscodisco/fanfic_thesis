@@ -6,7 +6,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## load packages
 ```{r}
-pacman::p_load(tidyverse, lmerTest, car, interactions, cld2, rstatix, ggpubr, lme4, Hmisc, MuMIN)
+pacman::p_load(tidyverse, lmerTest, car, interactions, cld2, rstatix, ggpubr, lme4, Hmisc, MuMIn)
 
 ```
 
@@ -101,6 +101,10 @@ df[c('fandom', 'type')] <- str_split_fixed(df$fandom_type, ' ', 2)
 ```{r}
 df %>% 
   group_by(type, fandom) %>% 
+  summarise(n = n())
+
+df %>% 
+  group_by(type, fandom, `Closest Text Type`) %>% 
   summarise(n = n())
  
 ```
@@ -238,5 +242,34 @@ ggsave("rq1_plot.png", width = 8, height = 6)
 
     
 ```
+
+
+```{r}
+dimension_labeller <- c(
+  Dimension1="D1: Informational/Involved",
+  Dimension2="D2: Narrative Concern",
+  Dimension3="D3: Context-(In)Dependent",
+  Dimension4="D4: Overt Persuation",
+  Dimension5="D5: Non-abstract/Abstract",
+  Dimension6="D6: On-line Elaboration"
+)
+
+long %>% 
+  mutate(type = str_to_title(type)) %>% 
+  ggplot(., aes(factor(type), Score, group = fandom, color = fandom)) +
+  geom_smooth(method = "lm", alpha = 0.3) +
+  facet_wrap(~Dimension, scales = 'free', labeller=labeller(Dimension = dimension_labeller))+
+  theme_classic() +
+  scale_color_manual(values = col_palette, name = "Fandom")+
+  theme(plot.background = element_rect(color = "black", linewidth = 1))+
+  labs(x = 'Text Type')+
+  scale_x_discrete(expand = c(0.05,0))
+
+
+
+ggsave("rq1_plot_2.png", width = 8, height = 6)
+
+```
+
 
 
