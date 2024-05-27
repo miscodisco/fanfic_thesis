@@ -6,7 +6,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## load packages
 ```{r}
-pacman::p_load(tidyverse, lmerTest, car, interactions, cld2, rstatix, ggpubr, lme4, MuMIn)
+pacman::p_load(tidyverse, lmerTest, car, interactions, cld2, rstatix, ggpubr, lme4, MuMIn, scales)
 
 ```
 
@@ -70,7 +70,17 @@ full <- full %>%
 full %>% 
   group_by(fandom_label) %>% 
   summarise(n = n())
- 
+
+
+full %>% 
+  ggplot(., aes(published))+
+  geom_line(stat = 'bin', binwidth = 13)+
+  theme_bw()+
+  labs(x = 'Published date', y = 'Count')
+
+ggsave("count_plot.png", width = 10, height = 7)
+
+
 ```
 
 # RQ2: How do engagement metrics change Dimension scores (change?)? 
@@ -184,8 +194,7 @@ max_dim5 <- lmerTest::lmer(Dimension5 ~ fandom_label*kudos_hits_ratio + publishe
                              (1|author), data = full, REML = F)
 
 m1_dim5 <- lmerTest::lmer(Dimension5 ~ fandom_label + kudos_hits_ratio + published + word_count_scaled +
-                            (1|author), data = full, REML = F)
-m2_dim5 <- lmerTest::lmer(Dimension5 ~ kudos_hits_ratio + published + word_count_scaled +
+                            (1|author), data = full, REML = F)m2_dim5 <- lmerTest::lmer(Dimension5 ~ kudos_hits_ratio + published + word_count_scaled +
                             (1|author), data = full, REML = F)
 m3_dim5 <- lmerTest::lmer(Dimension5 ~ fandom_label + published + word_count_scaled + 
                             (1|author), data = full, REML = F)
@@ -254,9 +263,9 @@ long_plot <- merge(long, means)
 
 # plot
 long_plot %>% 
-  ggplot(., aes(kudos_hits_ratio, Score, col = fandom_label))+
-  geom_smooth(method = 'lm',alpha = .3)+
-  # geom_hline(aes(yintercept=mean_scor, col = fandom_label, linetype = fandom_label))+
+  geom_smooth(method = "lm", alpha = 0.25) +
+  # stat_summary(fun.data=mean_se, geom="ribbon", alpha=0.1, color = 'grey')+
+  geom_hline(aes(yintercept=mean_scor, col = fandom_label, linetype = fandom_label))+
   facet_wrap(~Dimension, scales = 'free', labeller=labeller(Dimension = dimension_labeller))+
   theme_classic()+
   scale_color_manual(values = col_palette, name = "Fandom")+
@@ -264,5 +273,14 @@ long_plot %>%
   theme(plot.background = element_rect(color = "black", linewidth = 1))
 
 ggsave("rq2_plot.png", width = 10, height = 7)
+```
+```{r}
+# assumptions
+vif(m1_dim6)
+
+plot(fitted(m1_dim6), resid(m1_dim6))
+
+qqnorm(resid(m1_dim6))
+
 ```
 

@@ -106,7 +106,7 @@ df %>%
 df %>% 
   group_by(type, fandom, `Closest Text Type`) %>% 
   summarise(n = n())
- 
+
 ```
 
 
@@ -257,7 +257,8 @@ dimension_labeller <- c(
 long %>% 
   mutate(type = str_to_title(type)) %>% 
   ggplot(., aes(factor(type), Score, group = fandom, color = fandom)) +
-  geom_smooth(method = "lm", alpha = 0.3) +
+  geom_smooth(method = "lm", alpha = 0.25) +
+  # stat_summary(fun.data=mean_se, geom="ribbon", alpha=0.1, color = 'grey')+
   facet_wrap(~Dimension, scales = 'free', labeller=labeller(Dimension = dimension_labeller))+
   theme_classic() +
   scale_color_manual(values = col_palette, name = "Fandom")+
@@ -272,4 +273,15 @@ ggsave("rq1_plot_2.png", width = 8, height = 6)
 ```
 
 
+```{r}
+## assumptions 
+
+plot(fitted(m2_dim6), resid(m2_dim6))
+
+qqnorm(resid(m2_dim6))
+
+qqline(resid(m2_dim1))
+
+plot(density(resid(m2_dim5)))
+```
 
