@@ -3,7 +3,7 @@
 This repo contains the code used for the Master's Thesis for Mia Jacobsen, MSc. Cognitive Science, Aarhus University:
 - More than just Porn: A Multidimensional Analysis of Fanfiction
 
-This includes the scarping of the fanfiction texts, the code used for creating the snippets run through Nini's (2019) MAT, and the code for the statistical analysis.
+This includes the code for scraping the fanfiction texts, creating the snippets which are run through Nini's (2019) MAT, and the code for the statistical analysis.
 
 ## Repo structure
 The repo is structured as follows:
